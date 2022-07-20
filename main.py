@@ -1,7 +1,7 @@
 import mlflow
 import os
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 
 
 # This automatically reads in the configuration
@@ -14,16 +14,14 @@ def go(config: DictConfig):
 
     # You can get the path at the root of the MLflow project with this:
     root_path = hydra.utils.get_original_cwd()
-    print(config["main"]["execute_steps"])
-    print(type(config["main"]["execute_steps"]))
-
+    
     # Check which steps we need to execute
     if isinstance(config["main"]["execute_steps"], str):
         # This was passed on the command line as a comma-separated list of steps
         steps_to_execute = config["main"]["execute_steps"].split(",")
     else:
-        assert isinstance(config["main"]["execute_steps"], list)
-        steps_to_execute = config["main"]["execute_steps"]
+        assert isinstance(config["main"]["execute_steps"], ListConfig)
+        steps_to_execute = list(config["main"]["execute_steps"])
 
     # Download step
     if "download" in steps_to_execute:
@@ -46,7 +44,7 @@ def go(config: DictConfig):
             os.path.join(root_path, 'preprocess'),
             'main',
             parameters={
-                'input_artifact': 'preprocessed_data.csv:latest',
+                'input_artifact': 'raw_data.parquet:latest',
                 'artifact_name': 'preprocessed_data.csv',
                 'artifact_type': 'preprocessed_data',
                 'artifact_description': 'Preprocessed data'
@@ -70,7 +68,7 @@ def go(config: DictConfig):
 
         ## YOUR CODE HERE: call the segregate step
         _ = mlflow.run(
-            os.path.join(root_path, 'check_data'),
+            os.path.join(root_path, 'segregate'),
             'main',
             parameters={
                 'input_artifact': 'preprocessed_data.csv:latest',
